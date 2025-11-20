@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regional Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+        #map {
+            width: 100vw;
+            height: 100vh;
+        }
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 18px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 180px;
+        }
+        .legend h4 {
+            margin: 0 0 12px 0;
+            font-size: 0.9em;
+            color: #2c3e50;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 7px 0;
+            gap: 10px;
+        }
+        .legend-color {
+            width: 24px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid rgba(0,0,0,0.15);
+            flex-shrink: 0;
+        }
+        .legend-text {
+            font-size: 0.8em;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="legend">
+        <h4>Regions</h4>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #d71515fe;"></div>
+            <div class="legend-text">CHINA</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #f39c12;"></div>
+            <div class="legend-text">INDIA+</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #c277f0;"></div>
+            <div class="legend-text">RUSSIA+</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #2ecc71;"></div>
+            <div class="legend-text">BRAZIL+</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #3e6360;"></div>
+            <div class="legend-text">REPUBLIC OF KOREA</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #dd2bb1;"></div>
+            <div class="legend-text">JAPAN</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #e7d919;"></div>
+            <div class="legend-text">LATAM+</div>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #3353d6;"></div>
+            <div class="legend-text">FRANCE+</div>
+        </div>
+    </div>
+
+    <script>
+        // Define countries by region
+        const regionColors = {
+            // CHINA
+            'CHN': { color: '#d71515fe', name: 'CHINA' },
+            
+            // INDIA+ (India and Hindi/Urdu speaking countries)
+            'IND': { color: '#f39c12', name: 'INDIA+' },
+            'LKA': { color: '#f39c12', name: 'INDIA+' }, // Sri Lanka
+            'NPL': { color: '#f39c12', name: 'INDIA+' }, // Nepal
+            'BTN': { color: '#f39c12', name: 'INDIA+' }, // Bhutan
+            'PAK': { color: '#f39c12', name: 'INDIA+' }, // Pakistan
+            'BGD': { color: '#f39c12', name: 'INDIA+' }, // Bangladesh
+            'MDV': { color: '#f39c12', name: 'INDIA+' }, // Maldives
+            
+            // RUSSIA+ (Russian-speaking countries)
+            'RUS': { color: '#c277f0', name: 'RUSSIA+' },
+            'BLR': { color: '#c277f0', name: 'RUSSIA+' }, // Belarus
+            'KAZ': { color: '#c277f0', name: 'RUSSIA+' }, // Kazakhstan
+            'KGZ': { color: '#c277f0', name: 'RUSSIA+' }, // Kyrgyzstan
+            'TJK': { color: '#c277f0', name: 'RUSSIA+' }, // Tajikistan
+            'ARM': { color: '#c277f0', name: 'RUSSIA+' }, // Armenia
+            'AZE': { color: '#c277f0', name: 'RUSSIA+' }, // Azerbaijan
+            'GEO': { color: '#c277f0', name: 'RUSSIA+' }, // Georgia
+            'MDA': { color: '#c277f0', name: 'RUSSIA+' }, // Moldova
+            'UKR': { color: '#c277f0', name: 'RUSSIA+' }, // Ukraine
+            
+            // BRAZIL+
+            'BRA': { color: '#2ecc71', name: 'BRAZIL+' },
+            'PRT': { color: '#2ecc71', name: 'BRAZIL+' }, // Portugal
+            'CPV': { color: '#2ecc71', name: 'BRAZIL+' }, // Cape Verde
+            'GNB': { color: '#2ecc71', name: 'BRAZIL+' }, // Guinea-Bissau
+            'STP': { color: '#2ecc71', name: 'BRAZIL+' }, // São Tomé and Príncipe
+            'TLS': { color: '#2ecc71', name: 'BRAZIL+' }, // Timor-Leste
+            
+            // REPUBLIC OF KOREA
+            'KOR': { color: '#3e6360', name: 'REPUBLIC OF KOREA' },
+            
+            // JAPAN
+            'JPN': { color: '#e91e63', name: 'JAPAN' },
+            
+            // LATAM+ (Spanish-speaking countries)
+            'ESP': { color: '#e7d919', name: 'LATAM+' }, // Spain
+            'MEX': { color: '#e7d919', name: 'LATAM+' }, // Mexico
+            'GTM': { color: '#e7d919', name: 'LATAM+' }, // Guatemala
+            'HND': { color: '#e7d919', name: 'LATAM+' }, // Honduras
+            'SLV': { color: '#e7d919', name: 'LATAM+' }, // El Salvador
+            'NIC': { color: '#e7d919', name: 'LATAM+' }, // Nicaragua
+            'CRI': { color: '#e7d919', name: 'LATAM+' }, // Costa Rica
+            'PAN': { color: '#e7d919', name: 'LATAM+' }, // Panama
+            'COL': { color: '#e7d919', name: 'LATAM+' }, // Colombia
+            'VEN': { color: '#e7d919', name: 'LATAM+' }, // Venezuela
+            'ECU': { color: '#e7d919', name: 'LATAM+' }, // Ecuador
+            'PER': { color: '#e7d919', name: 'LATAM+' }, // Peru
+            'BOL': { color: '#e7d919', name: 'LATAM+' }, // Bolivia
+            'PRY': { color: '#e7d919', name: 'LATAM+' }, // Paraguay
+            'CHL': { color: '#e7d919', name: 'LATAM+' }, // Chile
+            'ARG': { color: '#e7d919', name: 'LATAM+' }, // Argentina
+            'URY': { color: '#e7d919', name: 'LATAM+' }, // Uruguay
+            'CUB': { color: '#e7d919', name: 'LATAM+' }, // Cuba
+            'DOM': { color: '#e7d919', name: 'LATAM+' }, // Dominican Republic
+            'PRI': { color: '#e7d919', name: 'LATAM+' }, // Puerto Rico
+            'GNQ': { color: '#e7d919', name: 'LATAM+' }, // Equatorial Guinea
+            
+            // FRANCE+ (French-speaking countries)
+            'FRA': { color: '#3353d6', name: 'FRANCE+' }, // France
+            'BEL': { color: '#3353d6', name: 'FRANCE+' }, // Belgium
+            'CHE': { color: '#3353d6', name: 'FRANCE+' }, // Switzerland
+            'LUX': { color: '#3353d6', name: 'FRANCE+' }, // Luxembourg
+            'MCO': { color: '#3353d6', name: 'FRANCE+' }, // Monaco
+            'DZA': { color: '#3353d6', name: 'FRANCE+' }, // Algeria
+            'MAR': { color: '#3353d6', name: 'FRANCE+' }, // Morocco
+            'TUN': { color: '#3353d6', name: 'FRANCE+' }, // Tunisia
+            'SEN': { color: '#3353d6', name: 'FRANCE+' }, // Senegal
+            'MLI': { color: '#3353d6', name: 'FRANCE+' }, // Mali
+            'NER': { color: '#3353d6', name: 'FRANCE+' }, // Niger
+            'TCD': { color: '#3353d6', name: 'FRANCE+' }, // Chad
+            'BFA': { color: '#3353d6', name: 'FRANCE+' }, // Burkina Faso
+            'CIV': { color: '#3353d6', name: 'FRANCE+' }, // Ivory Coast
+            'CMR': { color: '#3353d6', name: 'FRANCE+' }, // Cameroon
+            'GAB': { color: '#3353d6', name: 'FRANCE+' }, // Gabon
+            'COG': { color: '#3353d6', name: 'FRANCE+' }, // Congo
+            'COD': { color: '#3353d6', name: 'FRANCE+' }, // DR Congo
+            'MDG': { color: '#3353d6', name: 'FRANCE+' }, // Madagascar
+            'BEN': { color: '#3353d6', name: 'FRANCE+' }, // Benin
+            'TGO': { color: '#3353d6', name: 'FRANCE+' }, // Togo
+            'GIN': { color: '#3353d6', name: 'FRANCE+' }, // Guinea
+            'BDI': { color: '#3353d6', name: 'FRANCE+' }, // Burundi
+            'RWA': { color: '#3353d6', name: 'FRANCE+' }, // Rwanda
+            'CAF': { color: '#3353d6', name: 'FRANCE+' }, // Central African Republic
+            'MRT': { color: '#3353d6', name: 'FRANCE+' }, // Mauritania
+            'COM': { color: '#3353d6', name: 'FRANCE+' }, // Comoros
+            'SYC': { color: '#3353d6', name: 'FRANCE+' }, // Seychelles
+            'VUT': { color: '#3353d6', name: 'FRANCE+' }, // Vanuatu
+            'HTI': { color: '#3353d6', name: 'FRANCE+' }, // Haiti
+        };
+
+        // Initialize map
+        const map = L.map('map', {
+            center: [30, 0],
+            zoom: 2,
+            minZoom: 2,
+            maxZoom: 8,
+            zoomControl: true
+        });
+
+        // Add base layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Load world GeoJSON and color countries
+        fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+            .then(response => response.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    style: function(feature) {
+                        const countryCode = feature.id;
+                        const regionInfo = regionColors[countryCode];
+                        
+                        if (regionInfo) {
+                            return {
+                                fillColor: regionInfo.color,
+                                fillOpacity: 0.75,
+                                color: '#ffffff',
+                                weight: 0.8,
+                                opacity: 0.8
+                            };
+                        } else {
+                            // Uncolored countries (USA, Greenland, etc.)
+                            return {
+                                fillColor: '#e8e8e8',
+                                fillOpacity: 0.4,
+                                color: '#cccccc',
+                                weight: 0.5,
+                                opacity: 0.6
+                            };
+                        }
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const countryCode = feature.id;
+                        const countryName = feature.properties.name;
+                        const regionInfo = regionColors[countryCode];
+                        
+                        let popupContent = `<div style="text-align: center; font-family: Arial;"><strong>${countryName}</strong>`;
+                        if (regionInfo) {
+                            popupContent += `<br><span style="color: ${regionInfo.color}; font-weight: 600;">${regionInfo.name}</span>`;
+                        }
+                        popupContent += '</div>';
+                        
+                        layer.bindPopup(popupContent);
+                        
+                        // Hover effect
+                        layer.on('mouseover', function() {
+                            if (regionInfo) {
+                                this.setStyle({
+                                    weight: 2,
+                                    color: '#333',
+                                    fillOpacity: 0.9
+                                });
+                            }
+                        });
+                        
+                        layer.on('mouseout', function() {
+                            if (regionInfo) {
+                                this.setStyle({
+                                    weight: 0.8,
+                                    color: '#ffffff',
+                                    fillOpacity: 0.75
+                                });
+                            }
+                        });
+                    }
+                }).addTo(map);
+            })
+            .catch(error => {
+                console.error('Error loading map:', error);
+            });
+    </script>
+</body>
+</html>
